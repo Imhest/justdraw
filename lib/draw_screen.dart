@@ -8,55 +8,75 @@ class Draw extends StatefulWidget {
 
 class _DrawState extends State<Draw> {
   // variables for selected color, picker color, stroke width, opacity, etc go here
-  final _offsets = <Offset>[]; //this is a list that you can add to but you can't edit or reuse. You can add and remove items on the list tho
+  List<Offset> points = <Offset>[];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('JUSTDRAW'),
+        title: Text('Just Draw'),
         centerTitle: true,
       ),
       body: GestureDetector(
         onPanStart: (details) {
-          print(details.globalPosition);
-          _offsets.add(details.globalPosition);
+          setState (() {  
+            RenderBox box = context.findRenderObject();
+            Offset point = box.globalToLocal(details.globalPosition);
+            point = point.translate(0.0, - (AppBar().preferredSize.height));
+
+            points = List.from(points)..add(point);
+          });
         },
         onPanUpdate: (details) {
-          print(details.globalPosition);
-          _offsets.add(details.globalPosition);
+          setState (() {  
+            RenderBox box = context.findRenderObject();
+            Offset point = box.globalToLocal(details.globalPosition);
+            point = point.translate(0.0, - (AppBar().preferredSize.height));
+
+            points = List.from(points)..add(point);
+          });
         },
         onPanEnd: (details) {
-          _offsets.add(null);
+          setState (() {
+            points.add(null);
+          });
         },
-        child: Center(
-          child: CustomPaint(
-            painter: JustDrawing(_offsets),
-            child: Container(
-              color: Colors.yellow[100]
-            ),
+        child: CustomPaint(
+          painter: JustDrawing(points),
+          child: Container(
+            color: Colors.transparent,
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'clear screen',
+        backgroundColor: Colors.amber[800],
+        child: Icon(Icons.refresh),
+        onPressed: () {
+          setState(() => points.clear());
+        },
       ),
     );
   }
 }
 
 class JustDrawing extends CustomPainter {
-  final offsets;
+  final List<Offset> points;
 
-  JustDrawing(this.offsets): super();
+  JustDrawing(this.points);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true
+      ..strokeWidth = 4.0;
 
-    for (var offset in offsets) {
-      canvas.drawPoints(
-        PointMode.points, 
-        [offset], 
-        paint
-      );
+    for (var i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        canvas.drawLine(points[i], points[i + 1], paint);
+      }
     }
   }
 
